@@ -1,10 +1,6 @@
-## Writeup Template
-
-### You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
 **Advanced Lane Finding Project**
+
+All the python code are within the Ipython file Advanced_Lane_Finding.ipynb
 
 The goals / steps of this project are the following:
 
@@ -19,8 +15,9 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/undistort_output.png "Undistorted"
-[image2]: ./test_images/test1.jpg "Road Transformed"
+[image1]: ./camera_cal/calibration1.jpg "Raw Image"
+[image2]: ./output_images/calibration1_undistorted2.jpg "Undistorted Image"
+[image9]: ./test_images/test1.jpg "Road Transformed"
 [image3]: ./examples/binary_combo_example.jpg "Binary Example"
 [image4]: ./examples/warped_straight_lines.jpg "Warp Example"
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
@@ -43,70 +40,115 @@ You're reading it!
 
 #### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-The code for this step is contained in the first code cell of the IPython notebook located in "./examples/example.ipynb" (or in lines # through # of the file called `some_file.py`).  
+The related code is in the Camera Calibration section of the IPython notebook
 
-I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
+The following tasks are performed
+- Perform camera calibration on provided calibration images.
+- Create a utility function undistortImage using the resultant correction matrix.
+- Verify the performance of the function with test image(s).
 
-I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection. 
+
+Configure the number of inside corner of the chessboard to be 9 columns and 6 rows. Use `cv2.findChessboardCorners` to obtain the coordinates of the corners for each calibration images. Notice that calibration1.jpg failed to detect corners because several corners are chopped at the edge of the image. Great! I will use this image to verify the result of calibration, since it won't be used by the calibration step.
+
+I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function, which gives me the calibration matrices `mtx` and `dist`.
+
+For easier use, I created a utility function `undistortImage` which basically applies `cv2.undistort` with the calculated undistortion matrices `mtx` and `dist` to any input image.
+
+Finally I test the result by calling `undistortImage` with image calibration1.jpg and here is the before vs after: 
 
 ![alt text][image1]
+![alt text][image2]
 
 ### Pipeline (single images)
 
 #### 1. Provide an example of a distortion-corrected image.
 
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
+During the camera calibration verification, the `undistortImage` is further verified on a road image test4.jpg. Result shown as below.
+![alt text][image3]
+![alt text][image4]
+
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+The related code is in the Color / Gradient Filter section of the notebook.
 
-![alt text][image3]
+I created a function `applyThreshold` that takes a color image as input, applies a combination of color and gradient thresholds to output a binary image.
+
+Here's an example of my output for this step.  
+
+![alt text][image5]
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The related code is in the Perspective Transform section of the notebook.
+In this section, the following tasks are performed
+- Use one straight line image (straight_lines1.jpg) as reference to prepar perspective transform matrices.
+- Create utility funtion warpImage with the resultant transformation matrices.
+- Create utility funtion unwarpImage with the resultant transformation matrices.
+- Use second straight line image (straight_lines2.jpg) to verify.
 
+First I pick 2 points (after several attemps) on the left lane line on the reference image. Then with the assumption that the vehicle is centered in the lane, I mirror the x coordinates cross the center of the image to get 2 points (hopefully) landing on the right lane line. The 4 source points can be seen in the below image.
 ```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
+# Identify 2 points on the left lane line
+left_top = [590,450]
+left_bot = [300,650]
+# Mirror the points to the right lane line with the assumption the image is taken with vehicle centered in the lane
+right_top = [(img_st1.shape[1] - left_top[0]),left_top[1]]
+right_bot = [(img_st1.shape[1] - left_bot[0]),left_bot[1]]
+src = np.float32([left_top,left_bot,right_bot,right_top])
 ```
-
-This resulted in the following source and destination points:
-
-| Source        | Destination   | 
-|:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
-
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
-
 ![alt text][image4]
+Then again, knowing the 4 source points are taken on a straightline, we expect their destination points on the bird-eye view to form a rectangle. So we have the `dst` points as below.
+```python
+dst = np.float32(
+    [[300,100],
+     left_bot,
+     right_bot,
+     [right_bot[0],100]])
+```
+Next I call `cv2.getPerspectiveTransform` to obtain the warp matrix as well as the inverse warp matrix `M` and `Minv` given the `src` and `dst` points.
+
+With the two matrices, I created two utilty functions `warpImage` and `unwarpImage` for easier use. The function simply performs propective transform using cv2.warpPerspective with the resultant `M` or `Minv` matrices.
+
+By calling `warpImage` with the verification image and then `unwarpImage` on the resultant image, we obtained below result and verified that both the warping and unwarping function work as expected. 
+
+![alt text][image5]
+![alt text][image5]
+![alt text][image5]
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+The The Pipeline section of the IPython notebook defined the function `ProcessImage` that takes in a raw color image and does the process of image processing and lane detection and so on.
+
+Before anything else, we've create two `Line` objects to track the left and right lane line marker individually. 
+
+Now into the `ProcessImage` function, first use the utility functions described previously to perform undistortion, thresholding, and perspective transform to the input image.
+
+Next call either `slidingWindow` or `searchNearby` to detect pixels that belong to the lane line depending on whether a previous detection is available.
+
+Once the left and right line object has been updated with a new set of pixels, we call the `fit_poly` method to try to fit the pixels to a polynomial. The `fit_poly` method of `Line` first finds the 2nd order polynomial coefficient of the lastest set of pixels. Then it appends the fitted line to a buffer which contains all the fittings from the previous up to n (i.e. n = 5) detections. Then it calls the `UpdateAverageLine` to fit a new polynomial with all the points from the buffer and store the coefficient in `best_fit`. This 'filtering' effect allows to smooth out the result as well as reduce the impact from a 'bad' frame.
 
 ![alt text][image5]
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+In the Pixel to World Conversion section of the notebook, we land 3 reference points on the bird eye view of the straight line image. The 3 points shows the number of pixels representing the width of the lane and the length of white dash line, which according to the class material, are 12 and 10 feet respectively. With that, we obtain the two conversion factors: `meter_per_pixel_x` and `meter_per_pixel_y`.
+![alt text][image_pix2real]
+
+In the `Line` class, `UpdateRadius` method applies the conversion factors to the current line in the pixel world to get x and y in real world with unit meter. Then we fit a new polynomial for the x and y. Lastly the `radius_of_curvature` is calculated at the bottom of the image where the vehicle is.
+
+In the `Line` class, `UpdateOffset` method applies the conversion factor, this time only in x coordinate needed, to get the offset of the line from the center of the image and store in `line_base_pos`. At the end of the pipeline function, we simply take the averageof the left and right line position, to get the overall offset of the vehicle from the middle of the lane.
+```python
+offset = (LeftLine.line_base_pos + RightLine.line_base_pos) /2
+```
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+At the end of `ProcessImage`, we project the plotting points `plotx` and `ploty` from both left and right line and fill the area.
+A list of information is also projected onto the image.
+
+Example the the final image as below.
 
 ![alt text][image6]
 
