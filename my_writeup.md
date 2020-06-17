@@ -1,8 +1,8 @@
 **Advanced Lane Finding Project**
 
-All the python code are within the Ipython file Advanced_Lane_Finding.ipynb
+All the python code are within the Ipython file [Advanced_Lane_Finding.ipynb](./Advanced_Lane_Finding.ipynb).
 
-I may have saved the file in html format for easier review of the content and video.
+I may have saved the file in [html format](./Advanced_Lane_Finding.html) for easier review of the content and video.
 
 The goals / steps of this project are the following:
 
